@@ -44,7 +44,7 @@ seginit(void)
   // create a page for cpu local storage
   local = kalloc();
   memset(local, 0, PGSIZE);
-
+  // What is stored in tss and who uses it?
   gdt = (struct segdesc*) local;
   tss = (uint*) (((char*) local) + 1024);
   tss[16] = 0x00680000; // IO Map Base = End of TSS

@@ -72,7 +72,7 @@ entry32mp:
   mov     $0x1000, %eax
   mov     %eax, %cr3
 
-  lgdt    (gdtr64 - mboot_header + mboot_load_addr)
+  lgdt    (gdtr64 - mboot_header + mboot_load_addr) # Why - mboot_header + mboot_load_addr? gdtr64 has the address of the gdt arguments, then why - the boot header and load address?
 
 # PAE is required for 64-bit paging: CR4.PAE=1
   mov     %cr4, %eax

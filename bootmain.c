@@ -64,7 +64,7 @@ found_it:
       hdr->bss_end_addr - hdr->load_end_addr);
 
   entry = (void(*)(void))(hdr->entry_addr);
-  entry();
+  entry(); // Where does it jump to in entry.S? How to find out
 }
 
 void

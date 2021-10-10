@@ -1,0 +1,37 @@
+
+
+Concept doubts:
+
+	1. Why does it start with 16 bits when it has 64 bit registers?
+Ans: Old systems have 16 bits; so compatibility?
+	2. Difference between real mode, protected mode in x86?
+	3. How does GDT and LDT enable protection?
+	4. What does the gdt say?
+	5. Where is the stack address for bootmain? Need to create a memory map - with regions annotated.
+    Ans: 0xFFFF800000010000. This is the address? entry.S L#139. Where are the console address mapped? Where is the code put? 
+    Addresses that I know of: 
+    0x7c00 - First sector. 
+    0x10000 - Further multiheader sectors.
+    So, would the stack address be in between them?
+    6. What is multibootheader?
+	7. Where is end loaded? Is it in kernel.ld? What is the address that it takes? Also, why is it linked and not hardcoded?
+	8. Why is kernel page table loaded again in the main.c ? Because we do it once in entry.S ( l#52 - #61 ), which means that it should be set for the program running main as well.
+    9. Is the other processor not run until startothers in main.c L#35.
+    10. 3. Why cannot the processor be started simultaneously? What has to be done before that?
+    Ans: The interrupt vector table, filetable, process table all are common, so only it is enough for one processor to do that.
+    11. Why do you need mmap when you have mmap? You can just grow the heap whenever you need memory?
+    12. Is MMAP intended to map files/devices to memory and also allocate memory for the processes to use?
+    13. When do you use extern in your code? 
+    14. What is the purpose of tss?
+    15. What are major and minor in devices?
+    16. How are system calls called? Sys_wait -> wait?
+
+Code doubts:
+
+1. bootasm.S L#44
+2. bootmain.c L#67
+3. entry.S L#75
+4. vm.c L#47-76
+5. sysfile.c L#239
+6. trap.c L#23
+7. proc.c L#94

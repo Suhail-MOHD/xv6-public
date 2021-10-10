@@ -91,7 +91,7 @@ userinit(void)
 
   inituvm(p->pgdir, _binary_initcode_start,
           (addr_t)_binary_initcode_size);
-  p->sz = PGSIZE * 2;
+  p->sz = PGSIZE * 2; // Why is this done? Is it for the stack for the process? Then, where is the page allocated for that?
   memset(p->tf, 0, sizeof(*p->tf));
 
   p->tf->r11 = FL_IF;  // with SYSRET, EFLAGS is in R11
