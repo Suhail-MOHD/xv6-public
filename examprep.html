@@ -1,0 +1,428 @@
+<style type="text/css">table.tbl, table.tbl th, table.tbl td { border: 1px solid black; } table.tbl, table.tbl th, table.tbl td, table.stk, table.stk th, table.stk td { border-collapse: collapse; vertical-align: top; } table.stk td { text-align: center; vertical-align: center; } table.tbl th, table.stk th { background-color: #CCC; } </style>
+
+<table class="tbl">
+  <tbody>
+    <tr>
+      <th>Register</th>
+      <th>Purpose</th>
+      <th>Saved across calls</th>
+    </tr>
+    <tr>
+      <td style="font-family: monospace;"><code>%rax</code></td>
+      <td style="font-family: monospace;">temp register; return value</td>
+      <td style="font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%rbx<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">callee-saved<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">Yes<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%rcx<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 4th argument to functions <br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%rdx<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 3rd argument to functions<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="font-family: monospace;"><code>%rsp</code></td>
+      <td style="font-family: monospace;">stack pointer</td>
+      <td style="font-family: monospace;">Yes</td>
+    </tr>
+    <tr>
+      <td style="font-family: monospace;"><code>%rbp</code></td>
+      <td style="font-family: monospace;">callee-saved; base pointer</td>
+      <td style="font-family: monospace;">Yes</td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%rsi<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 2nd argument to functions<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%rdi<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 1st argument to functions<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%r8<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 5th argument to functions<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%r9<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">used to
+pass 6th argument to functions<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">No<br>
+      </td>
+    </tr>
+    <tr style="font-family: monospace;">
+      <td>%r10-r11<br>
+      </td>
+      <td style="vertical-align: top;">temporary<br>
+      </td>
+      <td style="vertical-align: top;">No<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top; font-family: monospace;">%r12-r15<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">callee-saved
+registers<br>
+      </td>
+      <td style="vertical-align: top; font-family: monospace;">Yes<br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+<table class="tbl">
+  <tbody>
+    <tr>
+      <th style="width: 15em;">Opcode</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td colspan="2"><em>Copying values</em></td>
+    </tr>
+    <tr>
+      <td><code>mov src, dest</code></td>
+      <td>Copies a value from a register, immediate value or memory
+address to a register or memory address.</td>
+    </tr>
+    <tr>
+      <td><code>cmove %src, %dest</code></td>
+      <td rowspan="6">Copies from register <code>%src</code> to
+register <code>%dest</code> if the last comparison operation had the
+corresponding result (<code>cmove</code>: equality, <code>cmovne</code>:
+inequality, <code>cmovg</code>: greater, <code>cmovl</code>: less, <code>cmovge</code>:
+greater or equal, <code>cmovle</code>: less or equal).</td>
+    </tr>
+    <tr>
+      <td><code>cmovne %src, %dest</code></td>
+    </tr>
+    <tr>
+      <td><code>cmovg %src, %dest</code></td>
+    </tr>
+    <tr>
+      <td><code>cmovl %src, %dest</code></td>
+    </tr>
+    <tr>
+      <td><code>cmovge %src, %dest</code></td>
+    </tr>
+    <tr>
+      <td><code>cmovle %src, %dest</code></td>
+    </tr>
+    <tr>
+      <td colspan="2"><em>Stack management</em></td>
+    </tr>
+    <tr>
+      <td><code>enter $x, $0</code></td>
+      <td>Sets up a procedure’s stack frame by first pushing the
+current value of <code>%rbp</code> on to the stack, storing the
+current value of <code>%rsp</code> in <code>%rbp</code>, and finally
+decreasing <code>%rsp</code> to make room for <code>x</code>
+byte-sized local variables.</td>
+    </tr>
+    <tr>
+      <td><code>leave</code></td>
+      <td>Removes local variables from the stack frame by restoring the
+old values of <code>%rsp</code> and <code>%rbp</code>.</td>
+    </tr>
+    <tr>
+      <td><code>push src</code></td>
+      <td>Decreases <code>%rsp</code> and places <code>src</code> at
+the new memory location pointed to by <code>%rsp</code>. Here, <code>src</code>
+can be a register, immediate value or memory address.</td>
+    </tr>
+    <tr>
+      <td><code>pop dest</code></td>
+      <td>Copies the value stored at the location pointed to by <code>%rsp</code>
+to <code>dest</code> and increases <code>%rsp</code>. Here, <code>dest</code>
+can be a register or memory location.</td>
+    </tr>
+    <tr>
+      <td colspan="2"><em>Control flow</em></td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">call target<br>
+      </td>
+      <td style="vertical-align: top;">Jump unconditionally to target
+and push return value (current PC + 1) onto stack.<br>
+      </td>
+    </tr>
+    <tr>
+      <td style="vertical-align: top;">ret<br>
+      </td>
+      <td style="vertical-align: top;">Pop the return address off the
+stack and jump unconditionally to this address.<br>
+      </td>
+    </tr>
+    <tr>
+      <td><code>jmp target</code></td>
+      <td>Jump unconditionally to <code>target</code>, which is
+specified as a memory location (for example, a label).</td>
+    </tr>
+    <tr>
+      <td><code>je target</code></td>
+      <td rowspan="2">Jump to <code>target</code> if the last
+comparison had the corresponding result (<code>je</code>: equality; <code>jne</code>:
+inequality).</td>
+    </tr>
+    <tr>
+      <td><code>jne target</code></td>
+    </tr>
+    <tr>
+      <td colspan="2"><em>Arithmetic and logic</em></td>
+    </tr>
+    <tr>
+      <td><code>add src, dest</code></td>
+      <td>Add <code>src</code> to <code>dest</code>.</td>
+    </tr>
+    <tr>
+      <td><code>sub src, dest</code></td>
+      <td>Subtract <code>src</code> from <code>dest</code>.</td>
+    </tr>
+    <tr>
+      <td><code>imul src, dest</code></td>
+      <td>Multiply <code>dest</code> by <code>src</code>.</td>
+    </tr>
+    <tr>
+      <td><code>idiv divisor</code></td>
+      <td>Divide <code>rdx:rax</code> by <code>divisor</code>.  Store quotient in <code>rax</code> and store remainder in <code>rdx</code>.</td>
+    </tr>
+    <tr>
+      <td><code>shr reg</code></td>
+      <td rowspan="2">Shift <code>reg</code> to the left or right by value in <code>cl</code> (low 8 bits of <code>rcx</code>).</td>
+    </tr>
+    <tr>
+      <td><code>shl reg</code></td>
+    </tr>
+    <tr>
+      <td><code>ror src, dest</code></td>
+      <td>Rotate <code>dest</code> to the left or right by <code>src</code>
+bits.</td>
+    </tr>
+    <tr>
+      <td><code>cmp src, dest</code></td>
+      <td>Set flags corresponding to whether <code>dest</code> is less
+than, equal to, or greater than <code>src</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<br>
+
+<table align="center"><tbody><tr><td>
+<pre>+------------------+  &lt;- 0xFFFFFFFF (4GB)
+|      32-bit      |
+|  memory mapped   |
+|     devices      |
+|                  |
+/\/\/\/\/\/\/\/\/\/\
+
+/\/\/\/\/\/\/\/\/\/\
+|                  |
+|      Unused      |
+|                  |
++------------------+  &lt;- depends on amount of RAM
+|                  |
+|                  |
+| Extended Memory  |
+|                  |
+|                  |
++------------------+  &lt;- 0x00100000 (1MB)
+|     BIOS ROM     |
++------------------+  &lt;- 0x000F0000 (960KB)
+|  16-bit devices, |
+|  expansion ROMs  |
++------------------+  &lt;- 0x000C0000 (768KB)
+|   VGA Display    |
++------------------+  &lt;- 0x000A0000 (640KB)
+|                  |
+|    Low Memory    |
+|                  |
++------------------+  &lt;- 0x00000000
+</pre>
+</td></tr>
+</tbody></table>
+<br>
+
+<img src="vAddressLayout.png"/>
+<br>
+<img src="kernelstack.png"/>
+<br>
+
+# Architecture information
+<br>
+## Go through assembly again
+<br>
+## 16 bit mode
+<br>
+- 16 bit registers<br>
+- Registers: (AX, BX, CX, DX), (SP, BP, SI, DI, IP), (CS, DS, SS, ES)<br>
+- Address operand syntax:<br>
+  segment:displacement(base register, index register, scale factor)<br>
+  segment:[base register + displacement + index register * scale factor]<br>
+<br>
+## 32 bit mode<br>
+<br>
+## 64 bit mode<br>
+<br>
+## x86_64 linux C ABI<br>
+<br>
+Save arguments into: %rdi, %rsi, %rdx, %rcx, %r8, and %r9<br>
+Return value is stored into: %rax<br>
+Callee saved registers: %rbp %rbx, and %r12-r15,<br>
+<br>
+# Physical memory layout<br>
+<br>
+0      -> A0000      (Low memory)<br>
+A0000  -> C0000      (VGA)<br>
+C0000  -> F0000      (other devs)<br>
+F0000  -> 100000     (BIOS)<br>
+100000 -> _____      (Extended memory)<br>
+<br>
+# Bootstrap<br>
+<br>
+## Initial state of the processor<br>
+- The bios is located at ROM at address 0x0F0000 to 0x0FFFFF = 64 KB region<br>
+- BIOS = basic input/output device<br>
+- UEFI vs BIOS (TODO: perhaps not as important)<br>
+- BIOS is generally proprietary<br>
+- The processor is in real mode 16 bit mode (TODO: study more about real mode)<br>
+- Real mode addressing: segment:offset<br>
+    - 20 bit addressing<br>
+    - how much can you address if only 16? 2 ^ 16 = 65536<br>
+    - with 20 bits, 16 times more = 1MB<br>
+    - (TODO: read assembly and see what these instructions actually look like)<br>
+    - calculation of final address: 16 * segment + offset (segment << 4 + offset)<br>
+
+## Start running<br>
+- The processor starts with CS = 0xf0000, IP = 0xfff0<br>
+- The processor starts at instruction 0xFFFF0 - 16 bytes behind the end of BIOS<br>
+- The first instruction jumps backwards to: CS = 0xf000 and IP = 0xe05b = 0xf005b<br>
+
+## BIOS<br>
+- The BIOS then:<br>
+    - Sets up the IDT: interrupt descriptor table<br>
+    - TODO: go through interrupts we used for hw2<br>
+    - Initializes various devices like VGA (TODO: look for more)<br>
+    - looks through hard-drives and floppy-disks for bootable devices<br>
+    - how does it know whether the device is bootable?<br>
+        - read first 512 bytes of the device<br>
+        - check if last two bytes are 0xAA55<br>
+        - if they are, then it's a boot sector<br>
+        - The BIOS then loads the boot sectore into 0x7c00 - 0x7dff<br>
+        - Then jumps to boot sector: CS:0000 IP:0x7c00<br>
+<br>
+## Boot sector<br>
+- At this point we are at 0x7c00<br>
+- first on the agenda, switch to 32 mode, 16 is for plebs<br>
+    - TODO: learn about 32 bit mode<br>
+    - also why not jump directly to 64 bit??? There's a reason. TODO<br>
+    - Zero out all data segment registers. (Try changing this and see if it crashes? Maybe affects the ljmp later?)<br>
+    - load the global descriptor table by lgdt (providing an address to the descriptor of the gdt)<br>
+    - Enable the A20 line. very interesting; https://en.wikipedia.org/wiki/A20_line explains it. There's also a note in bootasm.s<br>
+    - Set intent to switch to 32 bit mode by setting lowest bit in cr0<br>
+    - TODO: interesting note: you can't write directly to cr0: figure out why and what sets of registers this applies to<br>
+    - ljmp to finally switch to 32 and reload CS and eip<br>
+    - set data segment registers<br>
+    - jump to C finally<br>
+<br>
+- boot main stuff<br>
+    - stack pointer is pointing to 0x7c00<br>
+    - create pointer to 0x10000<br>
+    - read first 8192 bytes of disk into 0x10000<br>
+    - search for mbheader signature in first 8192 bytes<br>
+    - if found, use mbheader to load kernel into desired address (0x100000)<br>
+    - zero out BSS segment<br>
+    - jump to entry point<br>
+<br>
+## Kernel<br>
+<br>
+### entry.S<br>
+    - stack pointer should still be pointing to 0x7c00<br>
+    - we no longer need anything in low memory area though<br>
+    - setup bootstrap page tables in low memory<br>
+
+### main<br>
+<br>
+### other CPU boot<br>
+<br>
+# scheduler and context switching<br>
+<br>
+# important structures:<br>
+<br>
+## Page table<br>
+<br>
+## Page table entry<br>
+<br>
+## GDT 32 bit<br>
+<br>
+## GDT 64 bit<br>
+<br>
+## TSS<br>
+<br>
+## IDT<br>
+<br>
+## trap frame<br>
+<br>
+## context<br>
+<br>
+# Important procedures<br>
+<br>
+## SYSCALLS:<br>
+- user entry points are defined under usys.S<br>
+- an address for each syscall under usys<br>
+- add syscall number into rax<br>
+- save rcx because syscall destroys it by saving rip into it. (we never bring it back though!)<br>
+- syscall sets rcx to user rip and jumps to syscall_entry<br>
+- syscall_entry switches to process kernel stack<br>
+- push the rsp onto the trap frame(kernel stack) and set all registers<br>
+- set rdi to rsp (pointer to trapframe)<br>
+- call syscall<br>
+<br>
+## How does an interrupt happen??<br>
+<br>
+# Important syscalls<br>
+<br>
+## fork<br>
+<br>
+## exec<br>
+<br>
+######<br>
+TODO #<br>
+######<br>
+calling convention / ABI<br>
