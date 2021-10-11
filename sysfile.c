@@ -236,7 +236,7 @@ bad:
 }
 
 static struct inode*
-create(char *path, short type, short major, short minor) // What happens in this create Inode pointer? High level overview. In the case of console, what happens?
+create(char *path, short type, short major, short minor)
 {
   uint off;
   struct inode *ip, *dp;

@@ -20,7 +20,6 @@ mkgate(uint *idt, uint n, addr_t kva, uint pl)
   uint64 addr = (uint64) kva;
 
   n *= 4;
-  //What do these store? Structure of IDT? 
   idt[n+0] = (addr & 0xFFFF) | (KERNEL_CS << 16);
   idt[n+1] = (addr & 0xFFFF0000) | 0x8E00 | ((pl & 3) << 13);
   idt[n+2] = addr >> 32;

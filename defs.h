@@ -1,3 +1,4 @@
+// How do the functions in it get the implementation?
 struct buf;
 struct context;
 struct file;

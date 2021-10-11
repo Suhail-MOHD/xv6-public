@@ -43,12 +43,20 @@ mboot_header:
 
 .code32
 mboot_entry:
+## Santy notes:
+## Loads the page table at phy memory: 4096.
+## 4 bytes reference to one memory location.
+## We load both PML and PDPT here. (512+512)* 8 = 8192 address locations needed.
 # zero 2 pages for our bootstrap page tables
   xor     %eax, %eax    # value=0
   mov     $0x1000, %edi # starting at 4096
   mov     $0x2000, %ecx # size=8192
   rep     stosb         # memset(4096, 0, 8192)
 
+## Santy notes:
+# Higher needs to be mapped because that is the virtual address (common) where kernel memory resides. We have the lower half also mapped because we will not switch to higher address immediately.
+# 0 and KERNBASE needs to point to the same location as we are currently in the lower half of the memory and we will switch to higher memory address later. 
+# 
 # map both virtual address 0 and KERNBASE to the same PDPT
 # PML4T[0] -> 0x2000 (PDPT)
 # PML4T[256] -> 0x2000 (PDPT)
@@ -69,17 +77,20 @@ mboot_entry:
 .global entry32mp
 entry32mp:
 # CR3 -> 0x1000 (PML4T)
+# Santy notes:
+# We set the PML address here; move it to CR3 register.
   mov     $0x1000, %eax
   mov     %eax, %cr3
 
-  lgdt    (gdtr64 - mboot_header + mboot_load_addr) # Why - mboot_header + mboot_load_addr? gdtr64 has the address of the gdt arguments, then why - the boot header and load address?
+  lgdt    (gdtr64 - mboot_header + mboot_load_addr) # DOUBT: Why - mboot_header + mboot_load_addr? gdtr64 has the address of the gdt arguments, then why - the boot header and load address?
 
 # PAE is required for 64-bit paging: CR4.PAE=1
   mov     %cr4, %eax
   bts     $5, %eax
   mov     %eax, %cr4
 
-# access EFER Model specific register
+# access EFER Model specific register 
+# DOUBT: What is this?
   mov     $MSR_EFER, %ecx
   rdmsr
   bts     $0, %eax #enable system call extentions
@@ -87,6 +98,7 @@ entry32mp:
   wrmsr
 
 # enable paging
+#DOUBT: What are these bits?
   mov     %cr0, %eax
   orl     $(CR0_PG | CR0_WP | CR0_MP), %eax
   mov     %eax, %cr0
@@ -113,6 +125,8 @@ gdt64_end:
 .code64
 entry64low:
   movabs  $entry64high, %rax
+  #DOUBT: What is this mode of addressing?
+  #DOUBT: Why not jump straight to entry high?
   jmp     *%rax
 
 .global _start
@@ -136,6 +150,9 @@ entry64high:
   test    %ebx, %ebx
   jnz     entry64mp  # jump if booting a secondary code
 # setup initial stack
+## Santy notes:
+## This is the virtual address of the stack. 
+## This address was where Multiboot header was loaded. You set the stack pointer here and it grows downward.
   movabs  $0xFFFF800000010000, %rax
   mov     %rax, %rsp
 

@@ -54,7 +54,12 @@ found_it:
     return; // invalid;
   if (hdr->load_end_addr < hdr->load_addr)
     return; // no idea how much to load
-
+  /* Santy notes:
+  Read from the load address.
+  Arguments: 
+  Address: Use the load address from the header.
+  Size: Load end address - Load address
+  */
   readseg((uchar*) hdr->load_addr,
     (hdr->load_end_addr - hdr->load_addr),
     (n * 4) - (hdr->header_addr - hdr->load_addr));
@@ -64,7 +69,7 @@ found_it:
       hdr->bss_end_addr - hdr->load_end_addr);
 
   entry = (void(*)(void))(hdr->entry_addr);
-  entry(); // Where does it jump to in entry.S? How to find out
+  entry(); // DOUBT: here does it jump to in entry.S? How to find out
 }
 
 void

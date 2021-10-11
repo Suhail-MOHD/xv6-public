@@ -41,18 +41,17 @@ seta20.2:
   # effective memory map doesn't change during the transition.
   lgdt    gdtdesc
   movl    %cr0, %eax
-  orl     $CR0_PE, %eax # SANTY: What does this CR0_PE mean?
+  orl     $CR0_PE, %eax
   movl    %eax, %cr0
 
   # Complete the transition to 32-bit protected mode by using a long jmp
   # to reload %cs and %eip. The segment descriptors are set up with no
   # translation, so that the mapping is still the identity mapping.
-  ljmp    $(SEG_KCODE<<3), $start32 # SANTY: Don't really understand what the above explanation means. You need to move to 32 bit. But, how?
-  #What does SEG_KCODE contain? 
+  ljmp    $(SEG_KCODE<<3), $start32 # SANTY: GDT was already set, why is it only now that we are moving to 32 bit mode?
 
 .code32  # Tell assembler to generate 32-bit code now.
 start32:
-  # Set up the protected-mode data segment registers
+  # Set up the protected-mode data segment registers - Why are we setting these? 
   movw    $(SEG_KDATA<<3), %ax    # Our data segment selector
   movw    %ax, %ds                # -> DS: Data Segment
   movw    %ax, %es                # -> ES: Extra Segment
