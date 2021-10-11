@@ -11,6 +11,11 @@
 
 #define SECTSIZE  512
 
+// Don't be fooled
+// It says uint64 but it really isn't.
+// This file is compiled in 32 bit mode, and uint64 is just a fancy
+// way of saying unsigned long which is technically 32 bits :)
+// That's why an uint32 pointer in bootmain!!!!!
 struct mbheader {
   uint64 magic;
   uint64 flags;
@@ -32,13 +37,19 @@ bootmain(void)
   uint32 *x;
   uint n;
 
+  // (TODO: 32 bit pointer used to read 64 bit values???)
+  // SOLVED! See comment above mbheader struct
   x = (uint32*) 0x10000; // scratch space
 
   // multiboot header must be in the first 8192 bytes
+  // (Suhail note):
+  // How do I know which disk device to read from???
+  // Definitely the same one where the bootloader is 
+  // but how am I tell this to readseg????
   readseg((uchar*)x, 8192, 0);
 
   for (n = 0; n < 8192/4; n++)
-    if (x[n] == 0x1BADB002)
+    if (x[n] == 0x1BADB002) // See entry.S for structure of magic number and checksum
       if ((x[n] + x[n+1] + x[n+2]) == 0)
         goto found_it;
 

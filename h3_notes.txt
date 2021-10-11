@@ -1,0 +1,5 @@
+VGA buffer: 0xA0000
+Text buffer: 0xB8000
+
+Text = 2 bytes, color:char, color = back:fore
+

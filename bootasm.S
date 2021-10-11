@@ -20,6 +20,19 @@ start:
 
   # Physical address line A20 is tied to zero so that the first PCs
   # with 2 MB would run software that assumed 1 MB.  Undo that.
+  # (Suhail note):
+  # In 16 bit mode on 8086, the addressing scheme takes two values
+  # segment:offset
+  # segment ranges from 0 -> 2^16 = 0 -> 65536
+  # offset ranges from 0 -> 65536
+  # largest value that can be represented by 16 * segment + offset is:
+  #  - 0x10FFEF
+  # whem 16 bit mode was used in processors with only 20address lines this address would become: 
+  #  - 0x0FFEF (The highest bit is lost)
+  #
+  # But when we have systems that have more address lines emulating 16 bit mode, 0x10FFEF should continue
+  # to be interpreted as Ox0FFEF instead of 0x10FFEF so that programs that use these values continue working
+# This needs to be disabled when switching to 32 bit mode 
 seta20.1:
   inb     $0x64, %al          # Wait for not busy
   testb   $0x2, %al
@@ -39,6 +52,23 @@ seta20.2:
   # Switch from real to protected mode. Use a bootstrap GDT that makes
   # virtual addresses map directly to physical addresses so that the
   # effective memory map doesn't change during the transition.
+  #
+  # (Suhail note):
+  # CR0 control register description here (we only care about the first one):
+  #   0	PE	Protected Mode Enable	If 1, system is in protected mode, else system is in real mode
+  #   1	MP	Monitor co-processor	Controls interaction of WAIT/FWAIT instructions with TS flag in CR0
+  #   2	EM	Emulation	If set, no x87 floating-point unit present, if clear, x87 FPU present
+  #   3	TS	Task switched	Allows saving x87 task context upon a task switch only after x87 instruction used
+  #   4	ET	Extension type	On the 386, it allowed to specify whether the external math coprocessor was an 80287 or 80387
+  #   5	NE	Numeric error	Enable internal x87 floating point error reporting when set, else enables PC style x87 error detection
+  #   16	WP	Write protect	When set, the CPU can't write to read-only pages when privilege level is 0
+  #   18	AM	Alignment mask	Alignment check enabled if AM set, AC flag (in EFLAGS register) set, and privilege level is 3
+  #   29	NW	Not-write through	Globally enables/disable write-through caching
+  #   30	CD	Cache disable	Globally enables/disable the memory cache
+  #   31	PG	Paging	If 1, enable paging and use the § CR3 register, else disable paging.
+  #
+  #   CR0_PE = 0x00001
+  #   The first bit of the control register determines whether it is in protected mode or not
   lgdt    gdtdesc
   movl    %cr0, %eax
   orl     $CR0_PE, %eax
@@ -47,6 +77,11 @@ seta20.2:
   # Complete the transition to 32-bit protected mode by using a long jmp
   # to reload %cs and %eip. The segment descriptors are set up with no
   # translation, so that the mapping is still the identity mapping.
+  # (Suhail notes):
+  # https://stackoverflow.com/questions/48237933/after-load-the-gdt
+  # TODO: Also, find docs confirming that the CPU only starts interpreting 32 bit instructions *after* an ljmp
+  # TODO: Also, ljmp vs jmp, study more.
+  # SEG_KCODE = 0x1, so CS = 0x08
   ljmp    $(SEG_KCODE<<3), $start32
 
 .code32  # Tell assembler to generate 32-bit code now.

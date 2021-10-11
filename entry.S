@@ -54,7 +54,7 @@ mboot_entry:
 # PML4T[256] -> 0x2000 (PDPT)
   mov     $(0x2000 | PTE_P | PTE_W), %eax
   mov     %eax, 0x1000  # PML4T[0]
-  mov     %eax, 0x1800  # PML4T[512]
+  mov     %eax, 0x1800  # PML4T[256]
 
 # PDPT[0] -> 0x0 (1 GB flat map page)
   mov     $(0x0 | PTE_P | PTE_PS | PTE_W), %eax
@@ -109,6 +109,7 @@ gdt64_begin:
   .long 0x00009000
 gdt64_end:
 
+# Why low and high???
 .align 16
 .code64
 entry64low:

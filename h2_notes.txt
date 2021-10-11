@@ -1,0 +1,188 @@
+# hw2
+
+Creating the bootsector:
+- Write assembly (ensure that last two bytes are 0xAA55)
+- compile
+- link it to 0x7c00
+- extract just text portion into final object file
+- add object file to the image in the first sector
+
+BIOS interrupts
+
+- BIOS sets up some useful interrupt routines for us to call into
+- Each interrupt
+
+INT 10h (video services)
+- AH = 0x0E (subfunction=print char) AL = character BH = page number BL = color
+- AH = 0x13 (print entire string) es:bp -> address of string,
+    al -> color (background:foreground), bl -> cursor, dh:dl row:col
+- AH = 0x03 (read cursor pos) dh, dl will contain line and col number
+- AH = 0x00 AL=13h graphics mode 320x200 256 color graphics (MCGA,VGA)
+            Al=03h 80x25 16 color text (CGA,EGA,MCGA,VGA)
+- AH = 10h AL = 10h (set color register) bx = color reg dh,ch,cl:r,g,b
+
+Int 0x16 AH=00, wait for a key press
+
+Int 13h (disk services)
+- AH = 0x42 ds:di -> DAP (Disk address packet)
+
+DAP:
+    1 size of DAP = 10
+    1 unused = 0
+    2 num sectors
+    4 segment:offset (if separate, put offset first, little endian)
+    8 sector start address
+
+".byte" for BYTE values (and strings)
+".word" for WORD values (2-byte)
+".long" for DWORD values (4-byte)
+".quad" for QWORD values (8-byte)
+
+/******************************************************************************/
+.code16
+.globl start
+
+start:
+
+# *****************************************************************************
+# Save Drive number
+# *****************************************************************************
+push %dx
+
+# *****************************************************************************
+# Print string using 'int 10 / function 13' - Write character string
+# Reference: https://ostad.nit.ac.ir/payaidea/ospic/file1615.pdf
+# *****************************************************************************
+
+# 1. Set address of message
+# Address of message goes into es and bp in segment:offset manner
+mov $welcomemessage, %ax
+shr $0x04, %ax
+mov %ax, %es
+
+mov $welcomemessage, %ax
+and $0x0f, %ax
+mov %ax, %bp
+
+# 2. Set cursor position
+# read current cursor position into dh, dl, ch, cl via int10/03h
+# ch and cl are cleared later, we don't really care about them.
+# dh and dl will now contain the line and column number to print at.
+# as the position to print the string at
+movb $0x03, %ah
+int $0x10
+
+# 3. Set function to 'int10/13 - Write character string'
+movb $0x13, %ah
+
+# 4. set color and next cursor position
+movb $0x01, %al
+movb $0x0f, %bl
+
+# 5. Set page number
+movb $0,    %bh
+
+# 5. Set length of string to print
+mov  $endwelcomemessage-welcomemessage, %cx
+
+# 6. finally, print
+int $0x10
+
+# *****************************************************************************
+# Wait for user to press a key
+# *****************************************************************************
+movb $0x00, %ah
+int $0x16
+
+# *****************************************************************************
+# Change to video mode
+# *****************************************************************************
+movb $0x00, %ah
+movb $0x13, %al
+int $0x10
+
+# *****************************************************************************
+# Copy disk data to video 
+# *****************************************************************************
+
+# 1. Set address of DAP in ds:si
+mov $dap, %ax
+shr $0x04, %ax
+mov %ax, %ds
+
+mov $dap, %ax
+and $0x0f, %ax
+mov %ax, %si
+
+# 2. Load previously saved drive number
+pop %dx
+
+# 3. Set extended disk read function
+movb $0x42, %ah
+
+# 4. Finally, read
+int $0x13
+
+# *****************************************************************************
+# Wait for user to press a key
+# *****************************************************************************
+movb $0x00, %ah
+int $0x16
+
+# *****************************************************************************
+# Modify palette 
+# *****************************************************************************
+
+# This modifies the 4 most frequently occurring colors in the image
+# The frequency was found using: ' hexdump -v -e '1/1 "%02x\n"' cover.raw  | sort | uniq -c ' which I put together
+# after some googling.
+
+mov $0x10,%ah
+mov $0x10,%al
+mov $0x0f, %bx
+mov $0, %dh # r
+mov $0, %ch # g
+mov $0, %cl # b
+int $0x10
+
+mov $0x10,%ah
+mov $0x10,%al
+mov $0x7e, %bx
+mov $100, %dh
+mov $50, %ch
+mov $50, %cl
+int $0x10
+
+mov $0x10,%ah
+mov $0x10,%al
+mov $0x27, %bx
+mov $75, %dh
+mov $50, %ch
+mov $100, %cl
+int $0x10
+
+mov $0x10,%ah
+mov $0x10,%al
+mov $0x28, %bx
+mov $255, %dh
+mov $255, %ch
+mov $255, %cl
+int $0x10
+
+loop:
+jmp loop
+
+welcomemessage:
+.string "Welcome to xv6@UIC. Press any key to continue"
+endwelcomemessage:
+
+dap:
+.byte 0x10 # Size of packet
+.byte 0x00 
+.word 0x7D # Number of blocks to read
+.word 0x0000 # Offset address of target buffer
+.word 0xA000 # Segment address of target buffer
+.quad 0x01 # Block number (image starts from the second block)
+
+.org 0x1fe
+.word 0xAA55

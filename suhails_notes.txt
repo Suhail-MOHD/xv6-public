@@ -1,0 +1,160 @@
+# TODO list:
+
+## topic wise:
+    - I hate assembly
+        - go through links in https://pdos.csail.mit.edu/6.828/2017/labs/lab1/
+        - https://pdos.csail.mit.edu/6.828/2017/readings/pcasm-book.pdf
+        - intel vs AT&T syntax
+        - what assembler do we use?
+    - qemu
+    - Bootstrap
+        - https://pdos.csail.mit.edu/6.828/2017/labs/lab1/
+    - hw2 (Done)
+    - hw3 ()
+
+## Take printouts
+    - of https://pdos.csail.mit.edu/6.828/2017/labs/lab1/
+    - http://6.s081.scripts.mit.edu/sp18/x86-64-architecture-guide.html
+
+# Architecture information
+
+## Go through assembly again
+
+## 16 bit mode
+
+- 16 bit registers
+- Registers: (AX, BX, CX, DX), (SP, BP, SI, DI, IP), (CS, DS, SS, ES)
+- Address operand syntax:
+  segment:displacement(base register, index register, scale factor)
+  segment:[base register + displacement + index register * scale factor]
+
+## 32 bit mode
+
+## 64 bit mode
+
+## x86_64 linux C ABI
+
+Save arguments into: %rdi, %rsi, %rdx, %rcx, %r8, and %r9
+Return value is stored into: %rax
+Callee saved registers: %rbp %rbx, and %r12-r15,
+
+# Physical memory layout
+
+0      -> A0000      (Low memory)
+A0000  -> C0000      (VGA)
+C0000  -> F0000      (other devs)
+F0000  -> 100000     (BIOS)
+100000 -> _____      (Extended memory)
+
+# Bootstrap
+
+## Initial state of the processor
+- The bios is located at ROM at address 0x0F0000 to 0x0FFFFF = 64 KB region
+- BIOS = basic input/output device
+- UEFI vs BIOS (TODO: perhaps not as important)
+- BIOS is generally proprietary
+- The processor is in real mode 16 bit mode (TODO: study more about real mode)
+- Real mode addressing: segment:offset
+    - 20 bit addressing
+    - how much can you address if only 16? 2 ^ 16 = 65536
+    - with 20 bits, 16 times more = 1MB
+    - (TODO: read assembly and see what these instructions actually look like)
+    - calculation of final address: 16 * segment + offset (segment << 4 + offset)
+
+## Start running
+- The processor starts with CS = 0xf0000, IP = 0xfff0
+- The processor starts at instruction 0xFFFF0 - 16 bytes behind the end of BIOS
+- The first instruction jumps backwards to: CS = 0xf000 and IP = 0xe05b = 0xf005b
+
+## BIOS
+- The BIOS then:
+    - Sets up the IDT: interrupt descriptor table
+    - TODO: go through interrupts we used for hw2
+    - Initializes various devices like VGA (TODO: look for more)
+    - looks through hard-drives and floppy-disks for bootable devices
+    - how does it know whether the device is bootable?
+        - read first 512 bytes of the device
+        - check if last two bytes are 0xAA55
+        - if they are, then it's a boot sector
+        - The BIOS then loads the boot sectore into 0x7c00 - 0x7dff
+        - Then jumps to boot sector: CS:0000 IP:0x7c00
+
+## Boot sector
+- At this point we are at 0x7c00
+- first on the agenda, switch to 32 mode, 16 is for plebs
+    - TODO: learn about 32 bit mode
+    - also why not jump directly to 64 bit??? There's a reason. TODO
+    - Zero out all data segment registers. (Try changing this and see if it crashes? Maybe affects the ljmp later?)
+    - load the global descriptor table by lgdt (providing an address to the descriptor of the gdt)
+    - Enable the A20 line. very interesting; https://en.wikipedia.org/wiki/A20_line explains it. There's also a note in bootasm.s
+    - Set intent to switch to 32 bit mode by setting lowest bit in cr0
+    - TODO: interesting note: you can't write directly to cr0: figure out why and what sets of registers this applies to
+    - ljmp to finally switch to 32 and reload CS and eip
+    - set data segment registers
+    - jump to C finally
+
+- boot main stuff
+    - stack pointer is pointing to 0x7c00
+    - create pointer to 0x10000
+    - read first 8192 bytes of disk into 0x10000
+    - search for mbheader signature in first 8192 bytes
+    - if found, use mbheader to load kernel into desired address (0x100000)
+    - zero out BSS segment
+    - jump to entry point
+
+## Kernel
+
+### entry.S
+    - stack pointer should still be pointing to 0x7c00
+    - we no longer need anything in low memory area though
+    - setup bootstrap page tables in low memory
+
+### main
+
+### other CPU boot
+
+# scheduler and context switching
+
+# important structures:
+
+## Page table
+
+## Page table entry
+
+## GDT 32 bit
+
+## GDT 64 bit
+
+## TSS
+
+## IDT
+
+## trap frame
+
+## context
+
+# Important procedures
+
+## SYSCALLS:
+- user entry points are defined under usys.S
+- an address for each syscall under usys
+- add syscall number into rax
+- save rcx because syscall destroys it by saving rip into it. (we never bring it back though!)
+- syscall sets rcx to user rip and jumps to syscall_entry
+- syscall_entry switches to process kernel stack
+- push the rsp onto the trap frame(kernel stack) and set all registers
+- set rdi to rsp (pointer to trapframe)
+- call syscall
+
+## How does an interrupt happen??
+
+# Important syscalls
+
+## fork
+
+## exec
+
+######
+TODO #
+######
+calling convention / ABI
